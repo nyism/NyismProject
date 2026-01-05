@@ -5,16 +5,40 @@ stages:
 
 variables:
   DEPLOY_USER: "nyism"
-  DEPLOY_SERVER: "your_vm_ip"
-  DEPLOY_PATH: "/path/to/your/app"
-  DEPLOY_SSH_KEY: "/path/to/your/private-key.pem"
+  DEPLOY_SERVER: "192.168.205.128"
+  DEPLOY_PATH: "/home/nyism/flask_app"
 
 before_script:
   - apt-get update -y
-  - apt-get install -y sshpass
+  - apt-get install -y openssh-client rsync python3 python3-pip
 
 build:
   stage: build
   script:
-    - echo "Building the Python application..."
-    - pip install -r
+    - echo "📦 Installing dependencies"
+    - pip3 install -r app/requirements.txt
+
+test:
+  stage: test
+  script:
+    - echo "🧪 Testing Flask import"
+    - python3 -c "from app.app import app; print('Flask OK')"
+
+deploy:
+  stage: deploy
+  only:
+    - main
+  before_script:
+    - mkdir -p ~/.ssh
+    - echo "$DEPLOY_SSH_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan -H $DEPLOY_SERVER >> ~/.ssh/known_hosts
+  script:
+    - echo "🚀 Deploying to local VM"
+    - rsync -avz --delete app/ $DEPLOY_USER@$DEPLOY_SERVER:$DEPLOY_PATH
+    - ssh $DEPLOY_USER@$DEPLOY_SERVER "
+        cd $DEPLOY_PATH &&
+        pip3 install -r requirements.txt &&
+        pkill -f app.py || true &&
+        nohup python3 app.py > flask.log 2>&1 &
+      "

@@ -6,7 +6,7 @@ stages:
 variables:
   DEPLOY_USER: "nyism"
   DEPLOY_SERVER: "your_vm_ip"
-  DEPLOY_PATH: "C:\Users\nlahri\OneDrive - NEVERHACK\Documents\GitHub\NyismProject"
+  DEPLOY_PATH: "/path/to/your/app"
   DEPLOY_SSH_KEY: "/path/to/your/private-key.pem"
 
 before_script:
